@@ -1,14 +1,15 @@
 from dataclasses import dataclass, field
+# from collections.abc import Iterable
+import copy
 
 from .question_types import (
     Question,
     Category,
     QuestionInternalError,
+    QuestionValidationError,
     QuestionTypeBlock,
     QuestionTypeLoop,
 )
-# from collections.abc import Iterable
-import copy
 
 
 def validate_names(fields):
@@ -50,6 +51,16 @@ def question_to_schema(question_instance: Question) -> dict:
         fields: list[Question] = field(kw_only=True)
         def get_type_str(self) -> str:
             return 'iteration'
+        def validate(self, data) -> bool:
+            return all(f.validate(data.get(f.name)) for f in self.fields)
+        def assign(self, data) -> Question:
+            if not self.validate(data):
+                raise QuestionValidationError('Validation failed')
+            for f in self.fields:
+                if f.name in data:
+                    f.assign(data.get(f.name))
+            self._assign_helper_fields(data.get('HelperFields',{}))
+            return self
 
     question = copy.copy(question_instance) # for safety, to not occasionally modify
 
@@ -61,7 +72,7 @@ def question_to_schema(question_instance: Question) -> dict:
     if isinstance(question, CategoryElementClass):
         result = {
             "type": "object",
-            "title": question.category.label,
+            "title": str(question.category.label),
             "properties": {
                 f.name: question_to_schema(f) for f in question.fields
             },
@@ -70,7 +81,7 @@ def question_to_schema(question_instance: Question) -> dict:
             },
             "x-properties": question.properties,
         }
-        result = json_schema_items_ordered(result)
+        result['properties'] = json_schema_items_ordered(result.get('properties', {}))
         return result
 
     # make up the fields
@@ -80,6 +91,13 @@ def question_to_schema(question_instance: Question) -> dict:
         question_fields = question.fields
     elif isinstance(question, QuestionTypeLoop):
         # if loop
+        def make_field(question,cat_key,field_index,default_spec):
+            if cat_key not in question.response:
+                question.response[cat_key] = [copy.deepcopy(f) for f in question.fields]
+            response_slice = question.response.get(cat_key)
+            f: Question = response_slice[field_index]
+            f.update(default_spec)
+            return f
         question_fields = [
             CategoryElementClass(
                 name = cat.name,
@@ -89,7 +107,7 @@ def question_to_schema(question_instance: Question) -> dict:
                 widget = None,
                 helper_fields = {},
                 category = cat,
-                fields = question.fields,
+                fields = [ make_field(question,cat.name,i,f) for i,f in enumerate(question.fields) ],
             ) for cat in question.iterations
         ]
     elif hasattr(question, 'fields') and question.fields:
@@ -101,10 +119,11 @@ def question_to_schema(question_instance: Question) -> dict:
 
     result = {
         "type": "object" if not question.is_plain else question.get_type_str(),
-        "title": question.label,
+        "title": str(question.label),
         "properties": {
             f.name: question_to_schema(f) for f in question_fields
         },
+        "x-type": question.get_type_str(),
         "x-validation-rules": make_validation_rules(question),
         "x-widget": question.widget,
         "x-ui": {
@@ -112,5 +131,5 @@ def question_to_schema(question_instance: Question) -> dict:
         },
         "x-properties": question.properties,
     }
-    result = json_schema_items_ordered(result)
+    result['properties'] = json_schema_items_ordered(result.get('properties', {}))
     return result
