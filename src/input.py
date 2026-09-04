@@ -1,9 +1,10 @@
 
 
 from datetime import datetime, timezone
+from copy import deepcopy
 
 from .questions.to_schema import question_to_schema
-from .questions.question_types import Question
+from .questions.question_types import QuestionTypeRoot
 
 
 from .lib.webserve.src.webserver import Webserver # a wrapper around python http.server - no flask or django
@@ -25,13 +26,18 @@ STDOUT_COLOR_GREEN = "\033[32m"
 
 
 
-
-def inp(form_fields: Question) -> Question:
+# Getting a warning "shadows name input" but that's exactly the intent: conceptually it replaces "input"
+# If you still need both, just import input as webinput
+def input(form_fields: QuestionTypeRoot, config: dict | None = None) -> QuestionTypeRoot:
 
     time_start = datetime.now(timezone.utc)
     script_name = 'gitgui script'
+    _form_fields = deepcopy(form_fields)
+    if not config:
+        config = {}
 
-    config = {
+    _config = {
+        **config,
         'time_start': time_start,
         'script_name': script_name,
         'script_version': script_version,
@@ -46,36 +52,42 @@ def inp(form_fields: Question) -> Question:
         'http_address': None,
 
         'iface': {
+            **config.get('iface', {}),
             'WebResponse': WebResponse,
             'HTTP403': HTTP403,
             'HTTP404': HTTP404,
         },
     }
 
-    json_schema = question_to_schema(form_fields)
+    json_schema = question_to_schema(_form_fields)
 
     print('\npreparing webserver...\n')
-    config['http_host'] = 'localhost'
-    config['http_port'] = find_free_port(config['http_host'], start=PORT_START_WITH)
-    config['http_protocol'] = 'http'
-    config['http_address'] = (
-        f'{config["http_protocol"]}://'
-        f'{config["http_host"]}:{config["http_port"]}'
-    )
+    if not _config.get('http_host'):
+        _config['http_host'] = 'localhost'
+    if not _config.get('http_port'):
+        _config['http_port'] = find_free_port(_config['http_host'], start=PORT_START_WITH)
+    if not _config.get('http_protocol'):
+        _config['http_protocol'] = 'http'
+    if not _config.get('http_address'):
+        _config['http_address'] = (
+            f'{_config["http_protocol"]}://'
+            f'{_config["http_host"]}:{_config["http_port"]}'
+        )
 
     endpoints = {
-        '/': make_root_handler(form_fields, json_schema),
+        **_config.get('endpoints', {}),
+        '/': make_root_handler(_form_fields, json_schema),
         '/quit': lambda handler, *args, **argv: handler.server.shutdown() if handler.command=='POST' else None,
     }
 
     print(f'{STDOUT_COLOR_GREEN}starting {script_name} at {time_start}{STDOUT_COLOR_RESET}')
 
     print('\n')
-    server = Webserver(config,is_threading=CONFIG_WEBSERVER_MULTITHREADED) # a wrapper around python http.server - no flask or django
+    server = Webserver(_config, is_threading=CONFIG_WEBSERVER_MULTITHREADED) # a wrapper around python http.server - no flask or django
     server.assign_handlers(endpoints)
     # print(f'{STDOUT_COLOR_GREEN}starting webserver at {config.get("http_address")}{STDOUT_COLOR_RESET}')
 
-    launch_browser(f'{config.get("http_address")}/')
+    launch_browser(f'{_config.get("http_address")}/')
     server.run()
 
-    # form_fields is now enriched with responses
+    return _form_fields

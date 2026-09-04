@@ -3,6 +3,7 @@
 from .src.questions.question_types import (
     LocalizedText,
     Category,
+    QuestionTypeRoot,
     Question,
     QuestionModifier,
     QuestionTypeBlock,
@@ -18,5 +19,5 @@ from .src.questions.question_types import (
     QuestionTypeText,
 )
 from .src.input import (
-    inp,
+    input,
 )

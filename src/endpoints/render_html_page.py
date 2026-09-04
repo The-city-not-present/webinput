@@ -9,7 +9,7 @@ def html_escape(val):
         if isinstance(val, int) or isinstance(val, float):
             return True
         elif isinstance(val, str):
-            return not re.match('^\s*$', val)
+            return not re.match(r'^\s*$', val)
         else:
             return not not val
     def as_text(val):
@@ -62,9 +62,25 @@ document.addEventListener("DOMContentLoaded", function() {
         errorBannerElement.appendChild(p);
     };
     async function makeFetchResponseErrorMessage(response) {
+        // const checkIfFormValidationError = async response => {
+        //   if( response.status===415 ) {
+        //     try {
+        //       const data = await response.json();
+        //       const errorMsg = data?.error;
+        //       if( errorMsg )
+        //         return `Validation failed: ${errorMsg}`;
+        //     } catch(e) {
+        //       // ok to ignore, if response is not json, or anything else - validation should anyway be caught earlier
+        //     }
+        //   }
+        //   return null;
+        // }
         if( response instanceof Promise )
           return makeFetchResponseErrorMessage(await response);
         else if( response instanceof Response ) {
+          // const possibleFormValidationError = await checkIfFormValidationError(response);
+          // if( possibleFormValidationError )
+          //   return possibleFormValidationError;
           const prefix = `HTTP ${ response.status }`;
           try {
             const contentType = response.headers.get( 'content-type' ) || '';
@@ -91,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function() {
           return `${response}`;
         }
     };
-    const processForm = async formElement=>{
+    const handleFormSubmit = async formElement=>{
         try {
             const url = formElement.getAttribute('action');
             const method = formElement.getAttribute('method');
@@ -103,6 +119,20 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
                 body,
             });
+            Array.from(formElement.querySelectorAll('[data-role="validation-error"]')).forEach(errBannerEl=>{errBannerEl.innerText = '';});
+            if( response.status===415 ) {
+                const data = await response.json()
+                const errorMsg = data?.error;
+                const errorPath = data?.path;
+                if( errorMsg ) {
+                    // <span data-role="validation-error" data-for="
+                    const targetErrorPlaceholders = Array.from(formElement.querySelectorAll('[data-role="validation-error"][data-for="'+errorPath+'"]'));
+                    if( targetErrorPlaceholders.length>0 ) {
+                        targetErrorPlaceholders.forEach(errBannerEl=>{errBannerEl.innerText = errorMsg;});
+                        return;
+                    }
+                }
+            }
             if( !response.ok ) {
                 const err_msg = new Error(await makeFetchResponseErrorMessage(response));
                 throw err_msg;
@@ -116,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function() {
     };
     Array.from(document.querySelectorAll('form')).forEach(formElement=>Promise.resolve(formElement).then(formElement=>formElement.addEventListener('submit',function(event){
         event.preventDefault();
-        processForm(formElement);
+        handleFormSubmit(formElement);
         return false;
     })));
 })
@@ -148,8 +178,8 @@ def render(json_schema: dict) -> str:
     result_txt += f'<form method="POST" action="/">'
     if root.get("x-type")!='block':
         result_txt += f'<div class="error">{html_escape("Root element is not of type \"block\"")}</div>'
-    elif 'HelperFields' in root['properties'] and len(root['properties']['HelperFields'])>0:
-        result_txt += f'<div class="error">{html_escape("HelperFields are not allowed on root element")}</div>'
+    elif ':helperfields' in root['properties'] and len(root['properties'][':helperfields'])>0:
+        result_txt += f'<div class="error">{html_escape("helper_fields are not allowed on root element")}</div>'
     else:
         # good to process
         result_txt += '\n<!-- root -->\n'

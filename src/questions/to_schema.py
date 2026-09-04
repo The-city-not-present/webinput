@@ -5,8 +5,8 @@ import copy
 from .question_types import (
     Question,
     Category,
-    QuestionInternalError,
-    QuestionValidationError,
+    InternalError,
+    ValidationError,
     QuestionTypeBlock,
     QuestionTypeLoop,
 )
@@ -14,10 +14,10 @@ from .question_types import (
 
 def validate_names(fields):
     if not all(f._validate_name() for f in fields):
-        raise QuestionInternalError('name validation failed')
+        raise InternalError('name validation failed')
     names = [f.name for f in fields]
     if len(names) != len(set(names)):
-        raise QuestionInternalError('name validation failed')
+        raise InternalError('name validation failed')
     return True
 
 
@@ -43,7 +43,7 @@ def make_validation_rules(question):
 def question_to_schema(question_instance: Question) -> dict:
     def transform_helperfield_name(question_instance):
         question = copy.copy(question_instance)
-        question.name = f'helperfields.{question.name}'
+        question.name = f':helperfields.{question.name}'
         return question
     @dataclass
     class CategoryElementClass(Question):
@@ -55,11 +55,11 @@ def question_to_schema(question_instance: Question) -> dict:
             return all(f.validate(data.get(f.name)) for f in self.fields)
         def assign(self, data) -> Question:
             if not self.validate(data):
-                raise QuestionValidationError('Validation failed')
+                raise ValidationError('Validation failed')
             for f in self.fields:
                 if f.name in data:
                     f.assign(data.get(f.name))
-            self._assign_helper_fields(data.get('HelperFields',{}))
+            self._assign_helper_fields(data.get(':helperfields',{}))
             return self
 
     question = copy.copy(question_instance) # for safety, to not occasionally modify
@@ -112,7 +112,7 @@ def question_to_schema(question_instance: Question) -> dict:
         ]
     elif hasattr(question, 'fields') and question.fields:
         # if other - hmm, I don't have anything other in design
-        raise QuestionInternalError('Unrecognized question type: has "fields" attr but is not block or loop')
+        raise InternalError('Unrecognized question type: has "fields" attr but is not block or loop')
 
     if hasattr(question, 'helper_fields') and question.helper_fields:
         question_fields.extend([transform_helperfield_name(f) for f in question.helper_fields])

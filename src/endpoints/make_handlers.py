@@ -126,7 +126,11 @@ def make_handlers(form_fields, json_schema) -> Callable[..., WebResponse]:
                     return WebResponse(
                         status_code = 415,
                         content_type = 'application/json',
-                        body = json.dumps({'status': 'error', 'error': f'{e}'}, cls=JSONEncoder),
+                        body = json.dumps({
+                            'status': 'error',
+                            'error': f'{e}',
+                            'path': f'{e.path}',
+                        }, cls=JSONEncoder),
                         headers = [],
                     )
 
