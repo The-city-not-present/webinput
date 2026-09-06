@@ -181,7 +181,7 @@ def render(json_schema: dict) -> str:
     result_txt += f'<h1>{html_escape("WebInput")}</h1>'
     result_txt += f'<form method="POST" action="/">'
     if root.get("x-type")!='block':
-        result_txt += f'<div class="error">{html_escape("Root element is not of type \"block\"")}</div>'
+        result_txt += f'<div class="error">{html_escape("Root element is not of type `block`")}</div>'
     elif ':helperfields' in root['properties'] and len(root['properties'][':helperfields'])>0:
         result_txt += f'<div class="error">{html_escape("helper_fields are not allowed on root element")}</div>'
     else:
