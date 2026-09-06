@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const err_msg = new Error(await makeFetchResponseErrorMessage(response));
                 throw err_msg;
             }
-            const result = response.text();
+            const result = await response.text();
             alert(result);
         } catch(e) {
             logError(e);

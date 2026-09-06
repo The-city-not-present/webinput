@@ -135,12 +135,12 @@ def make_handlers(form_fields, json_schema) -> Callable[..., WebResponse]:
                     )
 
                 job_status["response_received"] = True
-                delay_term()
+                delay_term(net_request_handler)
 
                 return WebResponse(
                     status_code = 202,
                     content_type = 'application/json',
-                    body = json.dumps({'status': 'error', 'error': f'handler for {method} {path_parsed} is not recognized'},
+                    body = json.dumps({'status': 'done', 'message': f'accepted'},
                                     cls=JSONEncoder),
                     headers = [],
                 )
