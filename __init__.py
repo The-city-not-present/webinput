@@ -1,6 +1,6 @@
 
 
-from .src.questions.question_types import (
+from .src.lib.qre.src.question_types import (
     LocalizedText,
     Category,
     QuestionTypeRoot,

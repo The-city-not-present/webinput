@@ -3,8 +3,8 @@
 from datetime import datetime, timezone
 from copy import deepcopy
 
-from .questions.to_schema import question_to_schema
-from .questions.question_types import QuestionTypeRoot
+from .lib.qre.src.to_schema import question_to_schema
+from .lib.qre.src.question_types import QuestionTypeRoot
 
 
 from .lib.webserve.src.webserver import Webserver # a wrapper around python http.server - no flask or django

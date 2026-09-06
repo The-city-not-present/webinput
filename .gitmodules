@@ -1,9 +1,6 @@
 [submodule "src/lib/webserve"]
 	path = src/lib/webserve
 	url = https://github.com/The-city-not-present/webserve.git
-#ubmodule "src/questions/py_translatable_text_class"]
-#	path = src/questions/py_translatable_text_class
-#	url = https://github.com/The-city-not-present/py_translatable_text_class.git
-[submodule "src/questions/py_translatable_text_class"]
-	path = src/questions/py_translatable_text_class
-	url = https://github.com/The-city-not-present/py_translatable_text_class.git
+[submodule "src/lib/qre"]
+	path = src/lib/qre
+	url = https://github.com/The-city-not-present/questionnaire.git
