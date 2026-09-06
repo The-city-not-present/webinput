@@ -138,7 +138,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 throw err_msg;
             }
             const result = await response.text();
-            alert(result);
+            const p = document.createElement('p');
+            p.innerText = 'Response received. You can close this window now.';
+            formElement.innerHTML = '<div class="done"></div>';
+            formElement.appendChild(p);
+            (new Promise(r=>setTimeout(5000,r))).then(()=>{ window.close(); });
         } catch(e) {
             logError(e);
             throw e;

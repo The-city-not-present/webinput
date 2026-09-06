@@ -20,7 +20,7 @@ class JSONEncoder(json.JSONEncoder):
 
 def delay_term(net_request_handler):
     def worker():
-        time.sleep(3)
+        time.sleep(1)
         net_request_handler.server.shutdown()
 
     threading.Thread(target=worker, daemon=True).start()
