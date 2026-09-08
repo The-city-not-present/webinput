@@ -1,8 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 import json
-import threading # for delayed shutdown
-import time # for delayed shutdown
 import traceback, sys # for error reporting
 
 
@@ -17,13 +15,6 @@ class JSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-
-def delay_term(net_request_handler):
-    def worker():
-        time.sleep(1)
-        net_request_handler.server.shutdown()
-
-    threading.Thread(target=worker, daemon=True).start()
 
 
 def print_stacktrace(e):

@@ -6,13 +6,31 @@ from collections.abc import Iterable, Callable # for type annotations
 from urllib.parse import urlparse, parse_qs # to detect path within endpoints
 import json # for responding, obviously
 
-
-from .common_functions import JSONEncoder, delay_term, print_stacktrace
-
-from .render_html_page import render as render_home, render_fallback
+import threading # for delayed shutdown
+import time # for delayed shutdown
 
 
+from .common_functions import (
+    JSONEncoder,
+    print_stacktrace,
+)
 
+from .html_templates.default.render_html_page import (
+    render as render_home,
+)
+from .html_templates.default.render_html_fallback import (
+    render_fallback,
+)
+
+
+
+
+def delay_term(net_request_handler):
+    def worker():
+        time.sleep(.75)
+        net_request_handler.server.shutdown()
+
+    threading.Thread(target=worker, daemon=True).start()
 
 
 
@@ -31,11 +49,13 @@ class WebResponse:
 
 
 
-def make_handlers(form_fields, json_schema) -> Callable[..., WebResponse]:
+def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callable[..., WebResponse]:
 
     job_status = {
         "response_received": False,
     }
+    if not config:
+        config = {}
 
     def handle_root_path(net_request_handler, config: dict, added_data=None) -> WebResponse:
         method = net_request_handler.command
@@ -56,7 +76,7 @@ def make_handlers(form_fields, json_schema) -> Callable[..., WebResponse]:
             elif method == 'GET':
 
                 try:
-                    html_page = render_home(json_schema)
+                    html_page = render_home(json_schema, config)
                     return WebResponse(
                         status_code=200,
                         content_type='text/html',
@@ -163,3 +183,40 @@ def make_handlers(form_fields, json_schema) -> Callable[..., WebResponse]:
             )
 
     return handle_root_path
+
+
+
+def handle_isup_net_request(net_request_handler, config: dict, added_data=None) -> WebResponse:
+    method = net_request_handler.command
+    if method=='HEAD':
+        return WebResponse(
+                    status_code = 200,
+                )
+    else:
+        return WebResponse(
+            status_code = 405,
+            content_type='application/json',
+            body=json.dumps({'status': 'error', 'error': f'HTTP {method} method not supported'}, cls=JSONEncoder),
+            is_binary=False,
+            headers=[],
+        )
+
+def handle_quit_net_request(net_request_handler, config: dict, added_data=None) -> WebResponse:
+    method = net_request_handler.command
+    if method=='POST':
+        net_request_handler.server.shutdown()
+        return WebResponse(
+                    status_code = 202,
+                )
+    else:
+        return WebResponse(
+            status_code = 405,
+            content_type='application/json',
+            body=json.dumps({'status': 'error', 'error': f'HTTP {method} method not supported'}, cls=JSONEncoder),
+            is_binary=False,
+            headers=[],
+        )
+
+
+
+
