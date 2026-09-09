@@ -46,4 +46,30 @@ projectspecific_css = '''
     color: #fff;
 }
 
+
+
+
+.webinput-control-singlepunch-category-container {
+    display: block;
+    position: relative;
+    border: none;
+    padding: 0;
+    margin-bottom: 7px;
+}
+.webinput-control-singlepunch-category-container input, .webinput-control-singlepunch-category-container input.mdmreport-control, .webinput .webinput-control-singlepunch-category-container input.mdmreport-control {
+    display: none;
+}
+.webinput-control-singlepunch-category-container label, .webinput .webinput-control-singlepunch-category-container label, .webinput .mdmreport-controls .webinput-control-singlepunch-category-container label {
+    display: block;
+    position: relative;
+    border-radius: 2px;
+    border: 1px solid #e2e2e2;
+    padding: 7px 14px 7px;
+    margin-bottom: 7px;
+}
+.webinput-control-singlepunch-category-container input:checked + label {
+    border-color: #000!important;
+    outline: 2px solid #000!important;
+}
+
 '''
