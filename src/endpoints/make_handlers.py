@@ -155,6 +155,7 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
                     )
 
                 job_status["response_received"] = True
+                next(iter([ f for f in next(iter([ f for f in form_fields.fields if f.name=='_data_collection' ])).fields if f.name=='response_received' ])).assign(True,{})
                 delay_term(net_request_handler)
 
                 return WebResponse(

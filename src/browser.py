@@ -2,6 +2,7 @@ import queue
 from typing import Any
 import threading
 import time
+from dataclasses import dataclass, field
 
 from .lib.webserve.src.launch_browser import launch_browser
 
@@ -17,30 +18,50 @@ except ImportError as e:
 DEFAULT_WINDOW_TITLE = 'WebInput'
 
 
+@dataclass
+class WebBrowserEvents:
+    constructor: threading.Event = field(default_factory=threading.Event,init=False)
+    open: threading.Event = field(default_factory=threading.Event,init=False)
+    close: threading.Event = field(default_factory=threading.Event,init=False)
+    destroy: threading.Event = field(default_factory=threading.Event,init=False)
+    destructor: threading.Event = field(default_factory=threading.Event,init=False)
+    enter: threading.Event = field(default_factory=threading.Event,init=False)
+    exit: threading.Event = field(default_factory=threading.Event,init=False)
 
 class WebBrowserBase:
     def __init__(self, url, window_title: str|None = None):
         self._url = url
-        pass
+        self._events = WebBrowserEvents()
+        self._events.constructor.set()
 
     def open(self):
+        self._events.open.set()
         pass
 
     def close(self):
+        self._events.close.set()
         pass
 
     def destroy(self):
+        self._events.destroy.set()
         pass
+
+    @property
+    def events(self):
+        return self._events
 
     # unlink document if some error happened, or if we are done processing it
     def __del__(self):
+        self._events.destructor.set()
         pass
 
     # methods required by python so that I can use "with"
     def __enter__(self):
+        self._events.enter.set()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self._events.exit.set()
         return None
 
 
@@ -63,7 +84,7 @@ class WebBrowserPywebview(WebBrowserBase):
 
     def _create_window(self,_:Any,window,thread_func):
         start_args = {
-            'gui': 'qt',
+            # 'gui': 'qt',
         }
         thread_param = []
         destroy_event = self._destroy_window(webview, window, 0.1)
@@ -98,12 +119,14 @@ class WebBrowserPywebview(WebBrowserBase):
         return event
 
     def open(self):
+        super().open()
         # webview.start()
         time.sleep(.1)
         self._create_window(webview, self._window, self._thread_func)
-        pass
+        self._events.close.set()
 
     def close(self):
+        super().close()
         self._done.set()
 
     def __del__(self):
@@ -118,6 +141,7 @@ class WebBrowserPywebview(WebBrowserBase):
 
 class WebBrowserSystemDefault(WebBrowserBase):
     def open(self):
+        super().open()
         launch_browser(self._url )
 
 

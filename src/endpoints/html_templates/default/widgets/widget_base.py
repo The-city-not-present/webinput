@@ -54,13 +54,15 @@ class Widget:
         self.is_helper_field = self.name.startswith(':helperfields.')
         self.full_name = parent_path + ('' if parent_path=='' else '.') + name
         self.is_compound = self.question_type in ('block','loop','grid',)
-        self.x_ui_properties = { f'x-ui-{prop}': value for prop, value in question.get('x-ui',{}).items() if True }
+        self.x_ui_properties = { f'{prop}': value for prop, value in question.get('x-ui',{}).items() if True }
 
     def make_outer(self,children):
         full_name = self.full_name
         is_compound = self.is_compound
         x_ui_properties = self.x_ui_properties
         html_added_attrs = { f'data-{sanitize_html_attr_name(prop)}': sanitize_html_attr(value) for prop, value in x_ui_properties.items() }
+        if self.x_ui_properties.get('is_hidden'):
+            return make_tag('--',f'\n<!-- {full_name} -->\n',None)
         return make_tag(
             'div',
             {
@@ -68,6 +70,13 @@ class Widget:
                 **html_added_attrs,
             },
             make_tag('--',f'\n<!-- {full_name} -->\n',None) \
+                + make_tag(
+                    'div',
+                    { 'class': 'x-ui-properties' },
+                    [
+                        make_tag('span',{'class':'x-ui-prop'},f'{f}: {v}') for f, v in self.x_ui_properties.items()
+                    ]
+                ) \
                 + make_tag(
                     'div',
                     { 'class': 'mdmreport-controls-group', },
