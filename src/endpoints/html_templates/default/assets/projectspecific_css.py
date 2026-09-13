@@ -62,14 +62,29 @@ projectspecific_css = '''
 .webinput-control-singlepunch-category-container label, .webinput .webinput-control-singlepunch-category-container label, .webinput .mdmreport-controls .webinput-control-singlepunch-category-container label {
     display: block;
     position: relative;
-    border-radius: 2px;
-    border: 1px solid #e2e2e2;
-    padding: 7px 14px 7px;
+    border-radius: 4px;
+    border: 3px solid transparent;
+    padding: 5px 12px 5px;
     margin-bottom: 7px;
+    cursor: pointer;
+    transition: all 300ms ease;
+    /* box-shadow: inset 0 0 3px 1px rgba(192,192,192,.3); */
+    outline: 1px solid #ddd;
+    outline-offset: -1px;
 }
-.webinput-control-singlepunch-category-container input:checked + label {
-    border-color: #000!important;
-    outline: 2px solid #000!important;
+.webinput-control-singlepunch-category-container label:hover, .webinput .webinput-control-singlepunch-category-container label:hover, .webinput .mdmreport-controls .webinput-control-singlepunch-category-container label:hover {
+    border-color: #ddd;
+    padding: 5px 12px 5px;
+    border-width: 3px;
+    outline: 1px solid #ddd;
+    outline-offset: -1px;
+}
+.webinput-control-singlepunch-category-container input:checked + label, .webinput-control-singlepunch-category-container input.mdmreport-control:checked + label, .webinput .webinput-control-singlepunch-category-container input.mdmreport-control:checked + label {
+    border-color: #666;
+    padding: 5px 12px 5px;
+    border-width: 3px;
+    outline: 1px solid transparent;
+    outline-offset: -1px;
 }
 
 '''
