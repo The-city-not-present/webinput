@@ -19,5 +19,5 @@ from .src.lib.qre.src.question_types import (
     QuestionTypeText,
 )
 from .src.input import (
-    input,
+    webinput,
 )

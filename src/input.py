@@ -35,7 +35,7 @@ STDOUT_COLOR_GREEN  = "\033[32m"
 
 # Getting a warning "shadows name input" but that's exactly the intent: conceptually it replaces "input"
 # If you still need both, just import input as webinput
-def input(form_fields: QuestionTypeRoot, config: dict | None = None) -> QuestionTypeRoot:
+def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> QuestionTypeRoot | None:
 
     time_start = datetime.now(timezone.utc)
     script_name = 'gitgui script'
@@ -95,31 +95,17 @@ def input(form_fields: QuestionTypeRoot, config: dict | None = None) -> Question
     server.assign_handlers(endpoints)
     # print(f'{STDOUT_COLOR_GREEN}starting webserver at {config.get("http_address")}{STDOUT_COLOR_RESET}')
 
-    # print('starting tests...')
-    with WebBrowser(url=f'{config.get("http_address")}/',window_title=form_fields.label) as wb:
-        # print('with WebBrowser, constructor should have been called, and webview.create_window() should have been called')
+    with WebBrowser(url=f'{config.get("http_address")}/',window_title=str(form_fields.label)) as wb:
         def worker():
-            # print('  MAIN THREAD: starting')
             server.run()
-            # print('  MAIN THREAD: finished')
-        # print('starting main thread...')
         thread = Thread(target=worker, daemon=True)
         thread.start()
         def term_worker():
-            # print('  TERM THREAD: starting and waiting for main thread')
             thread.join()
-            # print('  TERM THREAD: we see the main thread has finished')
-            # print('  TERM THREAD: calling window.destroy()')
             wb.close()
-            # time.sleep(5)
-            # print('  TERM THREAD: reached the end')
-        # print('starting term thread...')
         term_thread = Thread(target=term_worker, daemon=True)
         term_thread.start()
-        # print('opening pywebview...')
         wb.open()
-        # print('waiting for term thread...')
         term_thread.join()
-    # print('THE END: all done, continue program')
 
     return _form_fields
