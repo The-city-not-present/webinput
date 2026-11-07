@@ -122,7 +122,7 @@ def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> Quest
         **config.get('endpoints', {}),
         '/': make_root_handler(form_fields, json_schema, config),
         '/quit': handle_quit_net_request,
-        '/functionality/isup.txt': handle_isup_net_request, 
+        '/health': handle_isup_net_request,
     }
 
     print('\n')
