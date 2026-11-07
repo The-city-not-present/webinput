@@ -29,12 +29,6 @@ echo "done"
 echo -
 echo -
 
-echo "Pull necessary project submodules"
-git submodule update --init --recursive
-echo "done"
-echo -
-echo -
-
 echo "Install dependencies"
 "$pythonexecutable" -m pip install -r requirements.txt
 echo "done"

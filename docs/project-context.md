@@ -103,6 +103,8 @@ webinput/
 
 ## Last state
 
+- Removed `git submodule update --init --recursive` from `build.sh` (submodule
+  initialization is no longer part of the dev-env prep).
 - Adopted `.clinerules/09-github-issues.md` (scan open GitHub issues and match
   them against pending changes when writing commit messages) from the sibling
   MDM-Diff-py project.
@@ -121,8 +123,8 @@ webinput/
 ## Build & test
 
 - `build.sh` is currently a **temporary** dev-environment helper: it prepares a
-  venv, installs `requirements.txt`, pulls submodules, and generates the asset
-  module via `build_assets.py` (`assets_static/` → `GENERATED/ASSETS.py`).
+  venv, installs `requirements.txt`, and generates the asset module via
+  `build_assets.py` (`assets_static/` → `GENERATED/ASSETS.py`).
   Bundling (pinliner) and a real distributable are future work — see
   `docs/roadmap.md`.
 - `GENERATED/` is gitignored and must be (re)built before importing
