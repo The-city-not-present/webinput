@@ -26,6 +26,46 @@ Inside, answer the questions needed to repeat the same update elsewhere:
 
 ---
 
+## Caller-side webserve logging: subscribe to events (print-only)
+
+- **Requested:** 2026-11-08
+- **Implemented:** 2026-11-08
+- **Where:** `src/input.py`, new `src/helper_webserve_logging.py`.
+
+### What & why
+
+webserve now emits structured events instead of printing. To keep the same
+console output while keeping webserve itself side-effect-free, the caller creates
+`Webserver(..., logging_enabled=False)` and subscribes a small logger
+(`WebserveLogger.handle_event`) to `server.events`. webinput keeps **no in-memory
+log** — the helper only prints (the parent gitgui project keeps a capped log for
+a future `/logs` endpoint).
+
+### Input (before)
+
+```python
+server = Webserver(config, is_threading=CONFIG_WEBSERVER_MULTITHREADED)
+server.assign_handlers(endpoints)
+```
+
+### Output (after)
+
+```python
+server = Webserver(config, is_threading=CONFIG_WEBSERVER_MULTITHREADED, logging_enabled=False)
+server.assign_handlers(endpoints)
+webserve_logger = WebserveLogger(config)
+server.events.subscribe(webserve_logger.handle_event)
+```
+
+### Repeat
+
+1. Update the vendored `webserve` submodule to a version that emits events.
+2. Add a caller-side logger that subscribes `listener(event_name, payload)` and
+   prints start/stop/request/error with the same colors and streams.
+3. Construct the server with `logging_enabled=False` and subscribe the logger.
+
+---
+
 ## Webinput: serve static assets from a generated `GENERATED/` module
 
 - **Requested:** 2026-11-07

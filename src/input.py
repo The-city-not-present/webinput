@@ -19,6 +19,8 @@ from .lib.webserve.src.webserver import Webserver # a wrapper around python http
 from .lib.webserve.src.webserver import HTTP403, HTTP404, WebResponse
 from .lib.webserve.src.find_free_port import find_free_port
 
+from .helper_webserve_logging import WebserveLogger
+
 from .browser import WebBrowser
 
 from .endpoints.make_handlers import (
@@ -130,8 +132,13 @@ def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> Quest
     }
 
     print('\n')
-    server = Webserver(config, is_threading=CONFIG_WEBSERVER_MULTITHREADED) # a wrapper around python http.server - no flask or django
+    server = Webserver(config, is_threading=CONFIG_WEBSERVER_MULTITHREADED, logging_enabled=False) # a wrapper around python http.server - no flask or django
     server.assign_handlers(endpoints)
+
+    # webserve's built-in console logging is off (logging_enabled=False above); we
+    # re-implement it here by subscribing to webserve's events (print-only).
+    webserve_logger = WebserveLogger(config)
+    server.events.subscribe(webserve_logger.handle_event)
     # print(f'{STDOUT_COLOR_GREEN}starting webserver at {config.get("http_address")}{STDOUT_COLOR_RESET}')
 
     with WebBrowser(url=f'{config.get("http_address")}/',window_title=str(form_fields.label)) as wb:

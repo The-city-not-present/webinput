@@ -49,6 +49,7 @@ webinput/
   src/
     input.py                   # webinput() entry point
     browser.py                 # WebBrowser: pywebview vs system-default fallback
+    helper_webserve_logging.py # subscribes to webserve events, prints to console
     endpoints/                 # HTTP handlers + HTML rendering
       make_handlers.py
       common_functions.py
@@ -120,6 +121,11 @@ webinput/
 - Adopted `.clinerules/09-github-issues.md` (scan open GitHub issues and match
   them against pending changes when writing commit messages) from the sibling
   MDM-Diff-py project.
+- webserve logging is now caller-side: the vendored `webserve` submodule was
+  updated to a version that emits events instead of printing, and
+  `src/input.py` creates the server with `logging_enabled=False` and subscribes
+  `src/helper_webserve_logging.py`'s `WebserveLogger` (print-only — no in-memory
+  log) to `server.events`.
 
 ## Known gotchas
 
