@@ -95,11 +95,17 @@ webinput/
 
 - `.clinerules/` holds the machine rules: terminal commands, project-context,
   architecture/imports, frontend/build, testing, code style & errors, JS, CSS,
-  dates & time, commit messages, the `common.css` changelog rule, optional
-  dependencies, and submodule-commit constraints.
+  dates & time, commit messages, GitHub issues in commits, the `common.css`
+  changelog rule, optional dependencies, and submodule-commit constraints.
 - `docs/maintenance-log.md` holds cross-project structural notes (import style,
   bundling/call conventions) shared with sibling projects of the same shape;
   repo-specific notes stay here.
+
+## Last state
+
+- Adopted `.clinerules/09-github-issues.md` (scan open GitHub issues and match
+  them against pending changes when writing commit messages) from the sibling
+  MDM-Diff-py project.
 
 ## Known gotchas
 
