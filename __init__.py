@@ -3,6 +3,8 @@
 from .src.lib.qre.src.question_types import (
     LocalizedText,
     Category,
+    CategoryList,
+    CategoryGroup,
     QuestionTypeRoot,
     Question,
     QuestionModifier,

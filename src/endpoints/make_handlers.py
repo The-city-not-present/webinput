@@ -120,16 +120,8 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
                     payload = json.loads(body) # expect dict with name: value pairs for all inputs
                 elif content_type.lower().startswith('application/x-www-form-urlencoded'.lower()):
                     response_parsed = parse_qs(body.decode("utf-8"))
-                    if any(len(values) > 1 for values in response_parsed.values()):
-                        # Bad request
-                        return WebResponse(
-                            status_code=415,
-                            content_type='application/json',
-                            body=json.dumps({'status': 'error', 'error': f'Duplicates in fields: {repr([values for values in response_parsed.values() if len(values) > 1])}'}, cls=JSONEncoder),
-                            headers=[],
-                        )
                     payload = {
-                        key: values[0]
+                        key: (values if len(values) > 1 else values[0])
                         for key, values in response_parsed.items()
                     }
                 else:

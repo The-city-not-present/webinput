@@ -151,4 +151,10 @@ projectspecific_css = r'''
   color: #444;
 }
 
+.webinput-control-category-group {
+    font-weight: 600;
+    margin: 12px 0 6px;
+    color: #333;
+}
+
 '''

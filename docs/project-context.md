@@ -58,7 +58,7 @@ webinput/
       html_templates/default/
         render_html_page.py
         render_html_fallback.py
-        widgets/               # per-question-type widget renderers
+        widgets/               # per-question-type widget renderers (+ common_category_list.py helper)
         assets/                # CSS/JS embedded as Python module strings
     lib/
       webserve/                # submodule: self-written webserver (no Flask/Django)
@@ -90,6 +90,13 @@ webinput/
   minified**: webinput serves it raw because its build must work without Node,
   whereas the parent repo minifies it with `minify_js`. Swap in a `*.prod.js`
   build and/or add minification if production size/warnings matter.
+- **Categories are ordered and groupable.** The `qre` model stores
+  single-/multi-punch `categories` and loop `iterations` as an ordered
+  `CategoryList` (optionally grouped via `CategoryGroup`); `question_to_schema`
+  emits `x-categories` (ordered dict) plus a new `x-category-groups` list.
+  `widget_singlepunch`/`widget_multipunch` render categories in order with group
+  headings; `make_handlers` collects repeated form fields into a list so
+  multi-punch checkboxes submit correctly.
 
 ## Conventions
 
@@ -103,6 +110,11 @@ webinput/
 
 ## Last state
 
+- Ordered + groupable categories: `qre`'s `categories`/`iterations` are now an
+  ordered `CategoryList` (with `CategoryGroup` for grouping); the schema emits
+  ordered `x-categories` and a new `x-category-groups`, and the single-/multi-punch
+  widgets render groups in order. `make_handlers` now collects repeated form
+  fields into a list so multi-punch checkboxes submit.
 - Removed `git submodule update --init --recursive` from `build.sh` (submodule
   initialization is no longer part of the dev-env prep).
 - Adopted `.clinerules/09-github-issues.md` (scan open GitHub issues and match
