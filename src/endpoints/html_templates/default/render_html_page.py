@@ -20,10 +20,11 @@ def render(json_schema: dict, config: dict|None = None) -> str:
     if not config:
         config = {}
 
-    root = json_schema
+    root_element = json_schema
     
-    if 'properties' not in root:
-        root['properties'] = {}
+    if 'properties' not in root_element:
+        root_element['properties'] = {}
+
     result_txt = ""
     result_txt += """
 <!doctype html>
@@ -38,25 +39,25 @@ def render(json_schema: dict, config: dict|None = None) -> str:
     result_txt += f'<style>{common_css}</style>'
     result_txt += f'<style>{projectspecific_css}</style>'
     result_txt += f'<script>{common_js}</script>'
-    result_txt += f'<title>{sanitize_html(root.get("title"))}</title>'
+    result_txt += f'<title>{sanitize_html(root_element.get("title"))}</title>'
     result_txt += """
 </head>
 <body class="mdmreportpage webinput page-webinput page-webinput-home mdmreportpage-page-webinput mdmreportpage-page-webinput-home">
 <div class="container">
 <div class="error error-banner" id="errorbanner"></div>
 """
-    result_txt += f'<h1>{sanitize_html(root.get("title"))}</h1>'
+    result_txt += f'<h1>{sanitize_html(root_element.get("title"))}</h1>'
     result_txt += f'<form method="POST" action="/" class="mdm-webinput-page">'
-    if root.get("x-type")!='block':
+    if root_element.get("x-type")!='block':
         result_txt += f'<div class="error">{sanitize_html("Root element is not of type `block`")}</div>'
-    elif ':helperfields' in root['properties'] and len(root['properties'][':helperfields'])>0:
+    elif ':helperfields' in root_element['properties'] and len(root_element['properties'][':helperfields'])>0:
         result_txt += f'<div class="error">{sanitize_html("helper_fields are not allowed on root element")}</div>'
     else:
         # good to process
         result_txt += '\n<!-- root -->\n'
         # result_txt += f'<label>{sanitize_html(root.get("title"))}</label>'
         result_txt += f'<div class="error validation-error"><span data-role="validation-error" data-for=""></span></div>'
-        for name, group in root['properties'].items():
+        for name, group in root_element['properties'].items():
             result_txt += Widget(name,group,parent_path='').to_html()
     result_txt += '\n<!-- end of root -->\n'
     result_txt += f'<button type="submit" class="mdmreport-control webinput-control webinput-control-submit webinput-button-submit">Confirm selection!</button>'

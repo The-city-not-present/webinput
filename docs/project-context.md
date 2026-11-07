@@ -40,6 +40,7 @@ webinput/
   README.md
   requirements.txt             # beautifulsoup4, pytest, pytest-html (pywebview optional)
   build.sh                     # temporary dev-env helper (not a bundler yet)
+  build_assets.py              # build-time: assets_static/ -> GENERATED/ASSETS.py
   .clinerules/                 # AI-agent rules
   docs/
     project-context.md         # this file
@@ -51,6 +52,9 @@ webinput/
     endpoints/                 # HTTP handlers + HTML rendering
       make_handlers.py
       common_functions.py
+      handle_assets.py         # /assets/<name> handler (serves GENERATED/ASSETS.py)
+      assets_static/           # static non-importable files; source for GENERATED/
+      GENERATED/               # gitignored; ASSETS.py produced by build.sh
       html_templates/default/
         render_html_page.py
         render_html_fallback.py
@@ -79,6 +83,13 @@ webinput/
 - **Browser is pluggable.** `src/browser.py` prefers `pywebview` (guarded import)
   and falls back to the system default browser (`launch_browser`). A missing
   `webview` package must not break the module (see `10-optional-dependencies.md`).
+- **Vue is served as the unminified development ESM build.** The `/assets/`
+  endpoint ships `vue.esm-browser.js` (Vue 3.5.x), vendored from the parent
+  project's `assets_vendor_libs/vue/`. It is the **development** ES-module
+  browser build (full dev warnings — not a `*.prod.js` build) and is **not
+  minified**: webinput serves it raw because its build must work without Node,
+  whereas the parent repo minifies it with `minify_js`. Swap in a `*.prod.js`
+  build and/or add minification if production size/warnings matter.
 
 ## Conventions
 
@@ -104,8 +115,12 @@ webinput/
 ## Build & test
 
 - `build.sh` is currently a **temporary** dev-environment helper: it prepares a
-  venv, installs `requirements.txt`, and pulls submodules. Bundling (pinliner)
-  and a real distributable are future work — see `docs/roadmap.md`.
+  venv, installs `requirements.txt`, pulls submodules, and generates the asset
+  module via `build_assets.py` (`assets_static/` → `GENERATED/ASSETS.py`).
+  Bundling (pinliner) and a real distributable are future work — see
+  `docs/roadmap.md`.
+- `GENERATED/` is gitignored and must be (re)built before importing
+  `src.endpoints.handle_assets`.
 - Development tests live in `tests/` (currently empty); `tests-real-sensitive-data/`
   is gitignored.
 

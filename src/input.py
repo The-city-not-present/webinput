@@ -1,5 +1,7 @@
 
 
+import re
+
 from datetime import datetime, timezone
 from copy import deepcopy
 from threading import Thread
@@ -24,6 +26,7 @@ from .endpoints.make_handlers import (
     handle_isup_net_request,
     handle_quit_net_request,
 )
+from .endpoints.handle_assets import handle_assets
 
 
 CONFIG_WEBSERVER_MULTITHREADED = True
@@ -123,6 +126,7 @@ def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> Quest
         '/': make_root_handler(form_fields, json_schema, config),
         '/quit': handle_quit_net_request,
         '/health': handle_isup_net_request,
+        re.compile(r'/assets/.+'): handle_assets,
     }
 
     print('\n')

@@ -26,6 +26,37 @@ Inside, answer the questions needed to repeat the same update elsewhere:
 
 ---
 
+## Webinput: serve static assets from a generated `GENERATED/` module
+
+- **Requested:** 2026-11-07
+- **Implemented:** 2026-11-07
+- **Where:** `src/endpoints/` (handler + registration), `build_assets.py`, `build.sh`.
+
+### What & why
+
+`webinput` needed to serve static, non-importable files (e.g. `.txt`) over its
+self-written webserver without depending on separate files at runtime (which
+would clash with pinliner's single-file bundle). The parent project's pattern is
+reused: static sources live in a `assets_static/` folder (no `__init__.py` — not
+importable), a build-time script turns them into an importable
+`GENERATED/ASSETS.py` Python module, and a handler imports that module and serves
+it. `GENERATED/` is gitignored and recreated on every build.
+
+### Repeat
+
+1. Put static files under `<pkg>/assets_static/` (no `__init__.py`).
+2. Add a stdlib-only build script that scans `assets_static/` and writes
+   `<pkg>/GENERATED/ASSETS.py` with `ASSETS = {relpath: content}` plus an empty
+   `__init__.py` (so `GENERATED/` is a package pinliner will bundle).
+3. Add a handler module that does `from .GENERATED.ASSETS import ASSETS` and
+   serves a matching path (raise `HTTP404` for unknown names).
+4. Register it in the `endpoints` dict with a `re.compile(r'/assets/.+')` key
+   (the webserver's endpoint matcher supports regex keys).
+5. Call the build script from `build.sh` — both the library's own `build.sh`
+   and the outer bundler's `build.sh` (before pinliner runs).
+
+---
+
 ## Project bootstrap: adopt `.clinerules/`, `docs/` and a stub `build.sh`
 
 - **Requested:** 2026-11-07

@@ -41,5 +41,11 @@ echo "done"
 echo -
 echo -
 
+echo "Build assets (assets_static -> GENERATED)"
+"$pythonexecutable" build_assets.py
+echo "done"
+echo -
+echo -
+
 echo "Build: nothing to bundle yet (webinput is a library; see docs/roadmap.md)"
 echo "Temporary build.sh — real build steps will be added later."
