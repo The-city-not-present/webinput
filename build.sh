@@ -29,8 +29,8 @@ echo "done"
 echo -
 echo -
 
-echo "Install dependencies"
-"$pythonexecutable" -m pip install -r requirements.txt
+echo "Install dev dependencies"
+"$pythonexecutable" -m pip install -r requirements-dev.txt
 echo "done"
 echo -
 echo -
