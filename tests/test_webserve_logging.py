@@ -8,7 +8,7 @@ import logging
 
 import pytest
 
-from src.helper_webserve_logging import WebserveLogger, logger
+from ..src.helper_webserve_logging import WebserveLogger, logger
 
 
 @pytest.fixture(autouse=True)
