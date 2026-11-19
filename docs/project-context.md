@@ -39,37 +39,48 @@ webinput/
   __init__.py                  # public API: question types + webinput()
   README.md
   requirements.txt             # beautifulsoup4, pytest, pytest-html (pywebview optional)
-  build.sh                     # temporary dev-env helper (not a bundler yet)
-  build_assets.py              # build-time: assets_static/ -> GENERATED/ASSETS.py
-  .clinerules/                 # AI-agent rules
+  build.sh                     # venv + deps + build_assets.py (Vue bundle via py_js_bundler)
+  build_assets.py              # build-time: assets_static/ -> GENERATED/ASSETS.py + bundle app.js
+  dev_webinput.py              # dev backend: headless keep-alive on :5279 (status/start/…/logs)
+  .clinerules/                 # AI-agent rules (+ skills/webinput-backend)
   docs/
     project-context.md         # this file
     roadmap.md
     maintenance-log.md
   src/
-    input.py                   # webinput() entry point
+    input.py                   # webinput() entry point (skin selection, keep_alive)
     browser.py                 # WebBrowser: pywebview vs system-default fallback
     helper_webserve_logging.py # subscribes to webserve events, prints to console
-    endpoints/                 # HTTP handlers + HTML rendering
-      make_handlers.py
+    endpoints/                 # HTTP handlers + rendering
+      make_handlers.py         # GET / (skin dispatch) + POST / and /submit + /quit + /health
       common_functions.py
+      render_error.py          # generic error page (used when a skin's render() raises)
       handle_assets.py         # /assets/<name> handler (serves GENERATED/ASSETS.py)
-      assets_static/           # static non-importable files; source for GENERATED/
-      GENERATED/               # gitignored; ASSETS.py produced by build.sh
-      html_templates/default/
-        render_html_page.py
-        render_html_fallback.py
-        widgets/               # per-question-type widget renderers (+ common_category_list.py helper)
-        assets/                # CSS/JS embedded as Python module strings
+      assets_static/           # static non-importable files (vue.esm-browser.js); source for GENERATED/
+      GENERATED/               # gitignored; ASSETS.py produced by build_assets.py
+      html_templates/          # skin registry (get_skin); see its __init__.py
+        assets/                # shared base CSS (common_css.py, normalize_css.py)
+        default/               # skin 'html': server-rendered (widgets/ + assets/)
+        vue/                   # skin 'vue': render_vue.py shell + /schema endpoint
+    frontend/app_js/           # Vue client app source (Vite dev + py_js_bundler entry)
+      src/app.js, src/app.css, vite.config.js, package.json, index.html, jsconfig.json
     lib/
       webserve/                # submodule: self-written webserver (no Flask/Django)
       qre/                     # submodule: questionnaire data model (+ translatable)
+      py_js_bundler/           # submodule: stdlib-only JS bundler (build-time only)
       json_shema.py            # empty placeholder (typo; see gotchas)
-  tests/                       # development tests (currently empty)
+  tests/                       # development tests
 ```
 
 ## Key decisions
 
+- **Rendering is pluggable "skins".** `src/endpoints/html_templates/` is a skin
+  registry; `config['skin']` picks `'html'` (server-rendered) or `'vue'`
+  (client-rendered, fetches `/schema`), or a caller-supplied skin object (the
+  "no way to provide a skin" escape hatch). Core owns only the skin-agnostic
+  contract: `GET /` (dispatch to skin), `POST /` and `POST /submit`
+  (parse/validate/assign), `/quit`, `/health`, `/assets/<name>`. `/schema` is a
+  *skin* endpoint contributed by the Vue skin, not core.
 - **Model comes from `qre`.** The questionnaire tree (`QuestionTypeRoot`,
   `QuestionTypeBlock`, scalar/compound types, validation) lives in the `src/lib/qre`
   submodule. `webinput` only converts it to JSON Schema (`question_to_schema`),
@@ -111,6 +122,19 @@ webinput/
 
 ## Last state
 
+- **Skins registry + Vue serving path (2026-11-19).** `src/endpoints/html_templates/`
+  is now a skin registry (`get_skin`); built-ins are `html` (server-rendered,
+  the fallback) and `vue` (client-rendered shell + `/schema` endpoint).
+  `config['skin']` selects one, or a caller-supplied skin object. Shared base
+  CSS (normalize + common) hoisted to `html_templates/assets/`; the generic
+  error page moved to `src/endpoints/render_error.py`.
+- **Dual-run Vue dev loop (2026-11-19).** Added `py_js_bundler` submodule,
+  `src/frontend/app_js/` (Vue + Vite, `npm run dev`), `dev_webinput.py`
+  (headless keep-alive dev backend on :5279, verbs status/start/stop/restart/
+  health/logs), `config['keep_alive']`, and the `POST /submit` alias.
+  `build_assets.py` bundles `app.js` via py_js_bundler (no Node). POST body is
+  now read via `request_body` (fixed a latent block in webserve's body-reader
+  cleanup).
 - Ordered + groupable categories: `qre`'s `categories`/`iterations` are now an
   ordered `CategoryList` (with `CategoryGroup` for grouping); the schema emits
   ordered `x-categories` and a new `x-category-groups`, and the single-/multi-punch
@@ -140,15 +164,16 @@ webinput/
 
 ## Build & test
 
-- `build.sh` is currently a **temporary** dev-environment helper: it prepares a
-  venv, installs `requirements.txt`, and generates the asset module via
-  `build_assets.py` (`assets_static/` → `GENERATED/ASSETS.py`).
-  Bundling (pinliner) and a real distributable are future work — see
-  `docs/roadmap.md`.
+- `build.sh` prepares a venv, installs deps, then runs `build_assets.py`, which
+  (a) turns `assets_static/` into `GENERATED/ASSETS.py` and (b) bundles the Vue
+  app (`frontend/app_js/src/app.js` → `app.js`) via `py_js_bundler` — no Node.
 - `GENERATED/` is gitignored and must be (re)built before importing
   `src.endpoints.handle_assets`.
-- Development tests live in `tests/` (currently empty); `tests-real-sensitive-data/`
-  is gitignored.
+- Dev loop for the Vue skin: `python dev_webinput.py start` (headless keep-alive
+  on :5279), then `npm run dev` inside `src/frontend/app_js/` (Vite proxies to
+  :5279). See `.clinerules/skills/webinput-backend`.
+- Development tests live in `tests/`; `tests-real-sensitive-data/` is gitignored.
+  Note: `pytest` also collects the `py_js_bundler` submodule's tests.
 
 ## Open questions / next steps
 

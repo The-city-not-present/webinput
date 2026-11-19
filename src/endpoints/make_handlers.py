@@ -15,12 +15,7 @@ from .common_functions import (
     print_stacktrace,
 )
 
-from .html_templates.default.render_html_page import (
-    render as render_home,
-)
-from .html_templates.default.render_html_fallback import (
-    render_fallback,
-)
+from .render_error import render_fallback
 
 
 
@@ -49,13 +44,14 @@ class WebResponse:
 
 
 
-def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callable[..., WebResponse]:
+def make_handlers(form_fields, json_schema, config: dict|None, skin: dict) -> Callable[..., WebResponse]:
 
     job_status = {
         "response_received": False,
     }
     if not config:
         config = {}
+    keep_alive = bool(config.get('keep_alive'))
 
     def handle_root_path(net_request_handler, config: dict, added_data=None) -> WebResponse:
         method = net_request_handler.command
@@ -65,7 +61,7 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
         params = parse_qs(urlparse(path_with_query).query)
         params_flattened = {key: values[-1] for key, values in params.items()}
 
-        if path_parsed == '/':
+        if path_parsed in ('/', '/submit'):
             if method == 'HEAD':
                 return WebResponse(
                     status_code=200,
@@ -76,7 +72,7 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
             elif method == 'GET':
 
                 try:
-                    html_page = render_home(json_schema, config)
+                    html_page = skin['render'](json_schema, config)
                     return WebResponse(
                         status_code=200,
                         content_type='text/html',
@@ -97,7 +93,7 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
 
             elif method == 'POST':
 
-                if job_status["response_received"]:
+                if job_status["response_received"] and not keep_alive:
                     net_request_handler.server.shutdown()
                     delay_term()
                     return WebResponse(
@@ -108,12 +104,12 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
                         headers=[],
                     )
 
-                # Read payload
-                # Read Content-Length header
-                length = int(net_request_handler.headers.get("Content-Length",0))
+                # Read payload. Use the webserver's request-body reader (not
+                # ``rfile`` directly) so its remaining-bytes bookkeeping stays
+                # correct and its cleanup doesn't block waiting on a body that
+                # was already consumed.
                 content_type = str(net_request_handler.headers.get("Content-Type", ""))
-                # Read exactly that many bytes
-                body = net_request_handler.rfile.read(length)
+                body = net_request_handler.request_body.read()
                 payload = {}
                 if content_type.lower().startswith('application/json'.lower()):
                     # Convert bytes -> str -> Python object
@@ -148,7 +144,8 @@ def make_handlers(form_fields, json_schema, config: dict|None = None) -> Callabl
 
                 job_status["response_received"] = True
                 next(iter([ f for f in next(iter([ f for f in form_fields.fields if f.name=='_data_collection' ])).fields if f.name=='response_received' ])).assign(True,{})
-                delay_term(net_request_handler)
+                if not keep_alive:
+                    delay_term(net_request_handler)
 
                 return WebResponse(
                     status_code = 202,
@@ -184,6 +181,9 @@ def handle_isup_net_request(net_request_handler, config: dict, added_data=None) 
     if method=='HEAD':
         return WebResponse(
                     status_code = 200,
+                    content_type = 'text/plain',
+                    body = '',
+                    headers = [],
                 )
     else:
         return WebResponse(
@@ -200,15 +200,10 @@ def handle_quit_net_request(net_request_handler, config: dict, added_data=None) 
         net_request_handler.server.shutdown()
         return WebResponse(
                     status_code = 202,
+                    content_type = 'application/json',
+                    body = json.dumps({'status': 'done', 'message': 'accepted'}, cls=JSONEncoder),
+                    headers = [],
                 )
-    else:
-        return WebResponse(
-            status_code = 405,
-            content_type='application/json',
-            body=json.dumps({'status': 'error', 'error': f'HTTP {method} method not supported'}, cls=JSONEncoder),
-            is_binary=False,
-            headers=[],
-        )
 
 
 

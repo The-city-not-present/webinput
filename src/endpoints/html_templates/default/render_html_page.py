@@ -3,9 +3,11 @@ from .widgets.common_funcs import (
 )
 from .assets import (
     common_js,
+    projectspecific_css,
+)
+from ..assets import (
     common_css,
     normalize_css,
-    projectspecific_css,
 )
 from .widgets import Widget
 

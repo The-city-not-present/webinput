@@ -26,6 +26,61 @@ Inside, answer the questions needed to repeat the same update elsewhere:
 
 ---
 
+## Skin registry + dual-run Vue serving path
+
+- **Requested:** 2026-11-19
+- **Implemented:** 2026-11-19
+- **Where:** `src/endpoints/html_templates/` (registry + `vue/` skin),
+  `src/frontend/app_js/`, `build_assets.py`, `src/input.py`,
+  `src/endpoints/make_handlers.py`.
+
+### What & why
+
+The rendering layer became a pluggable **skin** registry so a caller can pick
+`'html'` (server-rendered) or `'vue'` (client-rendered) — or supply its own skin
+object. The Vue skin mirrors the parent repo's dual-run setup: the bundle is
+produced by `py_js_bundler` (no Node) into `GENERATED/ASSETS.py` and served as
+`/assets/app.js` with an import map mapping bare `vue` to the vendored
+`vue.esm-browser.js`; the dev loop is Vite (`npm run dev`) proxying `/schema`,
+`/submit`, `/health`, `/assets` to a headless keep-alive backend.
+
+### Repeat
+
+1. Add a skin registry mapping names to `{render(json_schema, config), endpoints}`.
+2. In core, dispatch `GET /` to the selected skin and merge `skin.endpoints()`
+   below core endpoints and caller `config['endpoints']`.
+3. For a client-rendered skin, expose the schema as a skin endpoint (`/schema`)
+   and alias the submit path (`/submit`) so a Vite dev page can post without
+   colliding with the page itself.
+4. Bundle the client app with py_js_bundler into the shared `GENERATED/ASSETS.py`.
+
+---
+
+## Dev backend + keep-alive + POST body reader fix
+
+- **Requested:** 2026-11-19
+- **Implemented:** 2026-11-19
+- **Where:** `dev_webinput.py`, `src/input.py`, `src/endpoints/make_handlers.py`.
+
+### What & why
+
+webinput is one-shot, so it has no naturally-running backend; the Vite dev loop
+needs one. `dev_webinput.py` (a sister of the parent's `dev_backend.py`) starts
+webinput headlessly with `config['keep_alive']=True` on a fixed port; keep-alive
+skips the browser and the auto-shutdown-after-POST. Also fixed the POST body
+read to use `net_request_handler.request_body` (the webserver's body reader)
+instead of `rfile.read()` directly, so the reader's cleanup no longer blocks
+waiting on an already-consumed body.
+
+### Repeat
+
+1. Add `keep_alive` to the server run loop (skip browser + auto-shutdown).
+2. In POST handlers, read the body via the webserver's `request_body`, never
+   `rfile` directly.
+3. Copy the `dev_backend.py` pid/log/health pattern for a library's dev backend.
+
+---
+
 ## Caller-side webserve logging: subscribe to events (print-only)
 
 - **Requested:** 2026-11-08

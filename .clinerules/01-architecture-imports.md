@@ -34,7 +34,11 @@ Everything here exists so both ways keep working unchanged.
   (via `pinliner`) produces the one-file bundle. This repo's own `build.sh` is
   a temporary dev-environment helper only.
 - Reusable code is deliberately extracted into git submodules:
-  `src/lib/webserve` (self-written webserver) and `src/lib/qre` (the data
-  model, which in turn vendors `translatable`). Prefer submodules for
+  `src/lib/webserve` (self-written webserver), `src/lib/qre` (the data model,
+  which in turn vendors `translatable`), and `src/lib/py_js_bundler` (the
+  stdlib-only JS bundler used by `build_assets.py`). Prefer submodules for
   separable pieces.
+- The rendering layer is a pluggable **skin** registry under
+  `src/endpoints/html_templates/`; see its `__init__.py` for the `get_skin()`
+  contract (`render(json_schema, config)` + optional `endpoints`).
 - Stick to a policy of **minimal dependencies**.

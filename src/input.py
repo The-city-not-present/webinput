@@ -21,7 +21,7 @@ from .lib.webserve.src.find_free_port import find_free_port
 
 from .helper_webserve_logging import WebserveLogger
 
-from .browser import WebBrowser
+from .browser import get_web_browser
 
 from .endpoints.make_handlers import (
     make_handlers as make_root_handler,
@@ -29,6 +29,7 @@ from .endpoints.make_handlers import (
     handle_quit_net_request,
 )
 from .endpoints.handle_assets import handle_assets
+from .endpoints.html_templates import get_skin
 
 
 CONFIG_WEBSERVER_MULTITHREADED = True
@@ -109,6 +110,8 @@ def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> Quest
     }
 
     json_schema = question_to_schema(form_fields)
+    config['json_schema'] = json_schema
+    skin = get_skin(config.get('skin'))
 
     print('\npreparing webserver...\n')
     if not config.get('http_host'):
@@ -123,9 +126,12 @@ def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> Quest
             f'{config["http_host"]}:{config["http_port"]}'
         )
 
+    root_handler = make_root_handler(form_fields, json_schema, config, skin)
     endpoints = {
+        **skin['endpoints'],
         **config.get('endpoints', {}),
-        '/': make_root_handler(form_fields, json_schema, config),
+        '/': root_handler,
+        '/submit': root_handler,
         '/quit': handle_quit_net_request,
         '/health': handle_isup_net_request,
         re.compile(r'/assets/.+'): handle_assets,
@@ -141,7 +147,14 @@ def webinput(form_fields: QuestionTypeRoot, config: dict | None = None) -> Quest
     server.events.subscribe(webserve_logger.handle_event)
     # print(f'{STDOUT_COLOR_GREEN}starting webserver at {config.get("http_address")}{STDOUT_COLOR_RESET}')
 
-    with WebBrowser(url=f'{config.get("http_address")}/',window_title=str(form_fields.label)) as wb:
+    if config.get('keep_alive'):
+        # Headless dev mode: serve until stopped (no browser, no auto-shutdown
+        # after a successful POST — the handlers honour config['keep_alive']).
+        # This is what dev_webinput.py runs for the Vite dev loop.
+        server.run()
+        return None
+
+    with get_web_browser(config.get('browser_mode'))(url=f'{config.get("http_address")}/',window_title=str(form_fields.label)) as wb:
         def worker():
             server.run()
         def webbrowser_window_closed():

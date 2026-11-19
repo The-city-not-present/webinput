@@ -21,6 +21,9 @@ GENERATED = SRC / 'endpoints' / 'GENERATED'
 # Directory/file names skipped while scanning assets_static.
 EXCLUDED_PARTS = {'__pycache__', '.git', '.DS_Store'}
 
+# Entry point of the Vue skin's client app (bundled below into app.js).
+APP_JS_ENTRY = SRC / 'frontend' / 'app_js' / 'src' / 'app.js'
+
 
 def _collect_assets() -> dict[str, str]:
     assets: dict[str, str] = {}
@@ -39,11 +42,25 @@ def _collect_assets() -> dict[str, str]:
     return assets
 
 
+def _bundle_app_js() -> dict[str, str]:
+    """Bundle the Vue skin's client app into a single ``app.js`` asset.
+
+    Uses py_js_bundler (submodule, stdlib-only) so the build needs no Node.
+    Bare ``import ... from 'vue'`` is left as-is and resolved at runtime by the
+    skin's import map. Returns ``{}`` when the frontend app source is absent.
+    """
+    if not APP_JS_ENTRY.is_file():
+        return {}
+    from src.lib.py_js_bundler.src.run import process
+    return {'app.js': process(str(APP_JS_ENTRY))}
+
+
 def main():
     GENERATED.mkdir(parents=True, exist_ok=True)
     (GENERATED / '__init__.py').write_text('', encoding='utf-8')
 
     assets = _collect_assets()
+    assets.update(_bundle_app_js())
     now = datetime.now(timezone.utc)
     out_file = GENERATED / 'ASSETS.py'
     out_file.write_text(

@@ -145,6 +145,20 @@ class WebBrowserSystemDefault(WebBrowserBase):
         launch_browser(self._url )
 
 
+class WebBrowserNoop(WebBrowserBase):
+    """Headless one-shot: print the address instead of opening a window.
+
+    Used with ``--browser no-op``: the user opens the printed address manually,
+    submits the form, and the server shuts down and returns as usual.
+    """
+    def open(self):
+        super().open()
+        print()
+        print('WebInput: please open the following address in your browser:')
+        print(f'  {self._url}')
+        print()
+
+
 
 
 
@@ -152,3 +166,44 @@ if import_pywebview_error:
     WebBrowser = WebBrowserSystemDefault
 else:
     WebBrowser = WebBrowserPywebview
+
+
+BROWSER_MODE_AUTO = 'auto'
+BROWSER_MODE_SYSTEM_DEFAULT = 'system-default'
+BROWSER_MODE_PYWEBVIEW = 'pywebview'
+BROWSER_MODE_NOOP = 'no-op'
+
+BROWSER_MODES = (
+    BROWSER_MODE_AUTO,
+    BROWSER_MODE_SYSTEM_DEFAULT,
+    BROWSER_MODE_PYWEBVIEW,
+    BROWSER_MODE_NOOP,
+)
+
+
+def get_web_browser(browser_mode=None):
+    """Resolve ``config['browser_mode']`` into a ``WebBrowser`` class.
+
+    * ``auto`` (or ``None``) — the default: pywebview if importable, else the
+      system default browser.
+    * ``system-default`` — always the system default browser.
+    * ``pywebview`` — always pywebview (fails with a readable error if missing).
+    * ``no-op`` — don't open anything; print the address for the user to open.
+    """
+    if browser_mode is None or browser_mode == BROWSER_MODE_AUTO:
+        return WebBrowser
+    if browser_mode == BROWSER_MODE_SYSTEM_DEFAULT:
+        return WebBrowserSystemDefault
+    if browser_mode == BROWSER_MODE_PYWEBVIEW:
+        if import_pywebview_error:
+            raise Exception(
+                f'browser mode {BROWSER_MODE_PYWEBVIEW!r} is not available: '
+                f'{import_pywebview_error}'
+            )
+        return WebBrowserPywebview
+    if browser_mode == BROWSER_MODE_NOOP:
+        return WebBrowserNoop
+    raise ValueError(
+        f'unknown browser mode {browser_mode!r}; '
+        f'available: {", ".join(BROWSER_MODES)}'
+    )

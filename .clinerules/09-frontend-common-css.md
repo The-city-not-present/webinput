@@ -1,6 +1,6 @@
 # Global CSS (`common_css.py`)
 
-`src/endpoints/html_templates/default/assets/common_css.py` is the shared global
+`src/endpoints/html_templates/assets/common_css.py` is the shared global
 "skin" (embedded as a Python module string). Its rules are broad and reach all
 rendered markup, so it must stay predictable and low-surprise.
 
@@ -10,8 +10,8 @@ rendered markup, so it must stay predictable and low-surprise.
   global skin.
 - Only modify `common_css.py` when a change is genuinely global (a shared token,
   a shared utility, or a rule that should apply everywhere).
-- **Every change to the shared skin (`common_css.py`, and its companions
-  `normalize_css.py` / `projectspecific_css.py`) must be recorded** in
-  `src/endpoints/html_templates/default/assets/common_css.changelog.md` (the
-  file lives alongside the assets). Log entries are reverse-chronological and
+- **Every change to the shared skin (`common_css.py`, and its companion
+  `normalize_css.py`) must be recorded** in
+  `src/endpoints/html_templates/assets/common_css.changelog.md` (the file lives
+  alongside the shared assets). Log entries are reverse-chronological and
   include the date and a short reason for each change.

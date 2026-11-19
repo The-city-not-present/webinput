@@ -4,3 +4,6 @@
 [submodule "src/lib/qre"]
 	path = src/lib/qre
 	url = https://github.com/The-city-not-present/questionnaire.git
+[submodule "src/lib/py_js_bundler"]
+	path = src/lib/py_js_bundler
+	url = https://github.com/The-city-not-present/py_js_bundler.git
